@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free online tool to extract text from images (OCR). Convert multiple images to text instantly with our responsive image to text converter.">
+    <meta name="keywords" content="image to text, OCR, text extractor, image converter, multiple image processing">
+    <meta name="author" content="ImageToTextTool">
+    <title>Image to Text Converter | Extract Text from Multiple Images</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --accent-color: #ea4335;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333;
+            --medium-gray: #757575;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            line-height: 1.6;
+            color: var(--dark-gray);
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 1.5rem;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav ul li a:hover {
+            color: var(--primary-color);
+        }
+        
+        main {
+            padding: 2rem 0;
+        }
+        
+        .hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+        }
+        
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--medium-gray);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        
+        .tool-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 3rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+            background-color: rgba(66, 133, 244, 0.05);
+        }
+        
+        .upload-area:hover {
+            background-color: rgba(66, 133, 244, 0.1);
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .upload-area p {
+            margin-bottom: 1rem;
+            color: var(--medium-gray);
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #2d9249;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .option-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .option-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .option-group select, .option-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .image-preview {
+            position: relative;
+            width: calc(33.333% - 1rem);
+            min-width: 150px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .result-container {
+            margin-top: 2rem;
+        }
+        
+        .result-container h2 {
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+        }
+        
+        #resultText {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            background-color: var(--light-gray);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .ad-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ad-label {
+            font-size: 0.8rem;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        footer {
+            background-color: var(--dark-gray);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .copyright {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            nav ul {
+                margin-top: 1rem;
+                justify-content: center;
+            }
+            
+            nav ul li {
+                margin: 0 0.75rem;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .image-preview {
+                width: calc(50% - 0.5rem);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .image-preview {
+                width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+        
+        /* Loading animation */
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .loader-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status {
+            font-size: 0.9rem;
+            color: var(--medium-gray);
+            margin-top: 0.5rem;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/" class="logo">Image<span>ToText</span></a>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/privacy">Privacy Policy</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <!-- Top Ad Banner -->
+        <div class="ad-container">
+            <div>
+                <div class="ad-label">Advertisement</div>
+                <!-- Replace with your AdSense ad unit -->
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"></script>
+                <!-- Top Banner Ad -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                     data-ad-slot="YOUR_AD_SLOT_ID"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
+        
+        <div class="hero">
+            <h1>Image to Text Converter</h1>
+            <p>Extract text from multiple images at once using our free online OCR tool. Simply upload your images and get the text in seconds.</p>
+        </div>
+        
+        <div class="tool-container">
+            <div class="upload-area" id="uploadArea">
+                <i>📁</i>
+                <h3>Drag & Drop Images Here</h3>
+                <p>or click to browse files</p>
+                <button class="btn">Select Images</button>
+                <input type="file" id="fileInput" accept="image/*" multiple>
+            </div>
+            
+            <div class="options">
+                <div class="option-group">
+                    <label for="language">Language:</label>
+                    <select id="language">
+                        <option value="eng">English</option>
+                        <option value="spa">Spanish</option>
+                        <option value="fra">French</option>
+                        <option value="deu">German</option>
+                        <option value="chi_sim">Chinese (Simplified)</option>
+                        <option value="chi_tra">Chinese (Traditional)</option>
+                        <option value="jpn">Japanese</option>
+                        <option value="kor">Korean</option>
+                        <option value="ara">Arabic</option>
+                        <option value="hin">Hindi</option>
+                        <option value="rus">Russian</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="outputFormat">Output Format:</label>
+                    <select id="outputFormat">
+                        <option value="plain">Plain Text</option>
+                        <option value="withSpaces">Preserve Line Breaks</option>
+                        <option value="hocr">HOCR Format</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="preview-container" id="previewContainer"></div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="status" id="status"></div>
+            
+            <div class="loader" id="loader">
+                <div class="loader-spinner"></div>
+                <p>Processing images...</p>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn" id="processBtn" disabled>Extract Text</button>
+                <button class="btn btn-secondary" id="clearBtn" disabled>Clear All</button>
+            </div>
+            
+            <div class="result-container">
+                <h2>Extracted Text:</h2>
+                <textarea id="resultText" placeholder="Your extracted text will appear here..." readonly></textarea>
+                <div class="action-buttons">
+                    <button class="btn" id="copyBtn" disabled>Copy Text</button>
+                    <button class="btn btn-secondary" id="downloadBtn" disabled>Download as TXT</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Middle Ad Banner -->
+        <div class="ad-container">
+            <div>
+                <div class="ad-label">Advertisement</div>
+                <!-- Replace with your AdSense ad unit -->
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"></script>
+                <!-- Middle Rectangle Ad -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                     data-ad-slot="YOUR_AD_SLOT_ID"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container footer-content">
+            <a href="/" class="logo" style="color: white;">Image<span style="color: #fbbc05;">ToText</span></a>
+            <div class="footer-links">
+                <a href="/terms">Terms of Service</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/contact">Contact Us</a>
+                <a href="/faq">FAQ</a>
+            </div>
+            <p class="copyright">© 2023 ImageToText Converter. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const processBtn = document.getElementById('processBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resultText = document.getElementById('resultText');
+            const languageSelect = document.getElementById('language');
+            const outputFormat = document.getElementById('outputFormat');
+            const loader = document.getElementById('loader');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusElement = document.getElementById('status');
+            
+            let files = [];
+            
+            // Event listeners
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(66, 133, 244, 0.1)';
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.backgroundColor = 'rgba(66, 133, 244, 0.05)';
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(66, 133, 244, 0.05)';
+                if (e.dataTransfer.files.length) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleFiles(fileInput.files);
+                }
+            });
+            
+            processBtn.addEventListener('click', processImages);
+            clearBtn.addEventListener('click', clearAll);
+            copyBtn.addEventListener('click', copyText);
+            downloadBtn.addEventListener('click', downloadText);
+            
+            // Functions
+            function handleFiles(selectedFiles) {
+                files = Array.from(selectedFiles);
+                previewContainer.innerHTML = '';
+                
+                if (files.length > 10) {
+                    alert('You can upload a maximum of 10 images at once.');
+                    files = files.slice(0, 10);
+                }
+                
+                files.forEach((file, index) => {
+                    if (!file.type.match('image.*')) {
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'image-preview';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <button class="remove-btn" data-index="${index}">×</button>
+                        `;
+                        previewContainer.appendChild(preview);
+                        
+                        // Add remove button event
+                        preview.querySelector('.remove-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            removeImage(index);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                if (files.length > 0) {
+                    processBtn.disabled = false;
+                    clearBtn.disabled = false;
+                }
+            }
+            
+            function removeImage(index) {
+                files.splice(index, 1);
+                previewContainer.innerHTML = '';
+                
+                // Re-render previews with updated indexes
+                files.forEach((file, newIndex) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'image-preview';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <button class="remove-btn" data-index="${newIndex}">×</button>
+                        `;
+                        previewContainer.appendChild(preview);
+                        
+                        preview.querySelector('.remove-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            removeImage(newIndex);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                if (files.length === 0) {
+                    processBtn.disabled = true;
+                    clearBtn.disabled = true;
+                }
+            }
+            
+            function clearAll() {
+                files = [];
+                previewContainer.innerHTML = '';
+                resultText.value = '';
+                processBtn.disabled = true;
+                clearBtn.disabled = true;
+                copyBtn.disabled = true;
+                downloadBtn.disabled = true;
+                fileInput.value = '';
+            }
+            
+            async function processImages() {
+                if (files.length === 0) return;
+                
+                const language = languageSelect.value;
+                const format = outputFormat.value;
+                let combinedText = '';
+                
+                // Show loader and progress
+                loader.style.display = 'block';
+                progressContainer.style.display = 'block';
+                statusElement.style.display = 'block';
+                processBtn.disabled = true;
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        
+                        // Update progress
+                        const progress = Math.round((i / files.length) * 100);
+                        progressBar.style.width = `${progress}%`;
+                        statusElement.textContent = `Processing image ${i + 1} of ${files.length}...`;
+                        
+                        const result = await Tesseract.recognize(
+                            file,
+                            language,
+                            {
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        statusElement.textContent = `Processing image ${i + 1} of ${files.length}: ${Math.round(m.progress * 100)}%`;
+                                    }
+                                }
+                            }
+                        );
+                        
+                        let text = result.data.text;
+                        
+                        if (format === 'withSpaces') {
+                            // Preserve line breaks and spacing
+                            text = text.replace(/\n/g, '\n\n');
+                        } else if (format === 'hocr') {
+                            text = result.data.hocr;
+                        } else {
+                            // Plain text - normalize spaces
+                            text = text.replace(/\s+/g, ' ').trim();
+                        }
+                        
+                        // Modified: Only add the extracted text without filename headers
+                        combinedText += `${text}\n\n`;
+                    }
+                    
+                    // Complete progress
+                    progressBar.style.width = '100%';
+                    statusElement.textContent = 'Processing complete!';
+                    
+                    // Show result
+                    resultText.value = combinedText.trim();
+                    copyBtn.disabled = false;
+                    downloadBtn.disabled = false;
+                    
+                } catch (error) {
+                    console.error('Error during OCR:', error);
+                    statusElement.textContent = 'Error processing images. Please try again.';
+                    resultText.value = 'An error occurred while processing the images. Please check the console for details.';
+                } finally {
+                    loader.style.display = 'none';
+                    processBtn.disabled = false;
+                    
+                    // Reset progress after a delay
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        progressBar.style.width = '0%';
+                        statusElement.style.display = 'none';
+                    }, 2000);
+                }
+            }
+            
+            function copyText() {
+                resultText.select();
+                document.execCommand('copy');
+                
+                // Show feedback
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }
+            
+            function downloadText() {
+                const blob = new Blob([resultText.value], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'extracted-text.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+    
+    <!-- Structured data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Image to Text Converter",
+        "description": "Free online tool to extract text from images (OCR). Convert multiple images to text instantly.",
+        "url": "https://yourwebsite.com",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "ImageToTextTool"
+        }
+    }
+    </script>
+</body>
+</html>
